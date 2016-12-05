@@ -13,6 +13,7 @@ public class Application {
     private String name;
     private String description;
     private String runAs;
+    private String jvmOptions = "";
     private OS operatingSystem = OS.LINUX;
     private ApplicationTemplate template = ApplicationTemplate.none;
     private List<Instance> instances = new ArrayList<>();
@@ -87,5 +88,13 @@ public class Application {
 
     public void setRunAs(final String runAs) {
         this.runAs = runAs;
+    }
+
+    public String getJvmOptions() {
+        return jvmOptions;
+    }
+
+    public void setJvmOptions(final String jvmOptions) {
+        this.jvmOptions = jvmOptions;
     }
 }

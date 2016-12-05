@@ -6,8 +6,8 @@ kribi:
 spring:
   http:
     multipart:
-      max-file-size: 1000000000  # 1Gb
-      max-request-size: 1000000000  # 1Gb
+      max-file-size: 200000000  # 200Mb
+      max-request-size: 200000000  # 200Mb
 
 swagger:
   version: "1.0"

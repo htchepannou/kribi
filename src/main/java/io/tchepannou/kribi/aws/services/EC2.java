@@ -315,7 +315,7 @@ public class EC2 {
         cmds.add("echo SERVICE_NAME=" + app.getName() + " >> service-profile");
         cmds.add("echo SERVICE_USER=" + app.getName() + " >> service-profile");
         cmds.add("echo SERVICE_VERSION=" + deployRequest.getVersion() + " >> service-profile");
-        cmds.add("echo AWS_INSTANCE_ID=" + host.getId() + " >> service-profile");
+        cmds.add("echo JVM_OPTS=" + app.getJvmOptions() + " >> service-profile");
 
         exec(String.join(";", cmds), shell);
     }
