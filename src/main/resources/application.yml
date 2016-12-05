@@ -22,8 +22,10 @@ endpoints:
   enabled: true
   health:
     sensitive: false
+  info:
+    sensitive: false
   metrics:
-    enabled: true
+    sensitive: false
 
 logging:
   level:

@@ -38,56 +38,53 @@ public class AppConfiguration {
                 );
     }
 
-
     //-- Services
     @Bean
     @Scope(value = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
-    TransactionIdGenerator transactionIdGenerator(){
+    TransactionIdGenerator transactionIdGenerator() {
         return new TransactionIdGenerator();
     }
 
     @Bean
-    AccountRepository accountRepository(){
+    AccountRepository accountRepository() {
         return new S3AccountRepository();
     }
 
     @Bean
-    AwsContextFactory awsContextFactory(){
+    AwsContextFactory awsContextFactory() {
         return new AwsContextFactory();
     }
 
     @Bean
-    StorageService storageService(){
+    StorageService storageService() {
         return new S3StorageService();
     }
 
-
     //-- Filters
     @Bean
-    FilterRegistrationBean MdcFilter(){
+    FilterRegistrationBean MdcFilter() {
         final MDCFilter filter = new MDCFilter(transactionIdGenerator());
-        FilterRegistrationBean bean = new FilterRegistrationBean(filter);
+        final FilterRegistrationBean bean = new FilterRegistrationBean(filter);
         bean.setUrlPatterns(Arrays.asList("/v1/*"));
 
         return bean;
     }
 
     @Bean
-    FilterRegistrationBean ApiKeyFilter(){
+    FilterRegistrationBean ApiKeyFilter() {
         final ApiKeyFilter filter = new ApiKeyFilter(accountRepository());
-        FilterRegistrationBean bean = new FilterRegistrationBean(filter);
+        final FilterRegistrationBean bean = new FilterRegistrationBean(filter);
         bean.setUrlPatterns(Arrays.asList("/v1/*"));
 
         return bean;
     }
-
 
     //-- HealthCheck
     @Bean
     S3HealthCheck s3HealthCheck(
             @Value("${kribi.aws.bucket}") final String bucket,
             final AmazonS3 s3
-    ){
+    ) {
         return new S3HealthCheck(bucket, s3);
     }
 }
