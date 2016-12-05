@@ -1,0 +1,20 @@
+{
+  "name": "gs-rest-service",
+  "description": "Sample app",
+  "template": "springboot",
+  "runAs": "kribi-ec2-role",
+  "healthCheckPath": "/greeting",
+  "instances": [
+    {
+      "region": "us-east-1",
+      "type": "t2.micro"
+    }
+  ],
+  "services": {
+    "http": true,
+    "httpPort": 8080,
+    "https": false,
+    "httpsPort": 0,
+    "ssh": true
+  }
+}

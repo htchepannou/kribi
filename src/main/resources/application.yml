@@ -1,0 +1,40 @@
+kribi:
+  namespace: "io.tchepannou"
+  aws:
+    bucket: "${kribi.namespace}.kribi"
+
+spring:
+  http:
+    multipart:
+      max-file-size: 1000000000  # 1Gb
+      max-request-size: 1000000000  # 1Gb
+
+swagger:
+  version: "1.0"
+  title: Kribi
+  description: "Kribi deploys your application to the cloud"
+  termsPath: ""
+  email: "herve.tchepannou@gmail.com"
+  licenceType: ""
+  licencePath: "#"
+
+endpoints:
+  enabled: true
+  health:
+    sensitive: false
+  metrics:
+    enabled: true
+
+logging:
+  level:
+    root: INFO
+    io.tchepannou.kribi: INFO
+    com.amazonaws: WARN
+    com.jcabi: WARN
+    org: WARN
+    io: WARN
+    springfix: WARN
+
+  pattern:
+    console: "%d Type=%level TransactionId=%X{TransactionId} Message='%m'%n"
+    file: "%d Type=%level TransactionId=%X{TransactionId} Message='%m'%n"

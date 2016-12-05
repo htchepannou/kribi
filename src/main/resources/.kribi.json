@@ -1,0 +1,20 @@
+{
+  "name": "kribi",
+  "template": "springboot",
+  "runAs": "kribi-ec2-role",
+  "healthCheckPath": "/health",
+  "instances": [
+    {
+      "region": "us-east-1",
+      "type": "t2.micro"
+    }
+  ],
+  "services": {
+    "http": true,
+    "httpPort": 8080,
+    "https": false,
+    "httpsPort": 8442,
+    "ssh": true,
+    "sshPort" : 22
+  }
+}

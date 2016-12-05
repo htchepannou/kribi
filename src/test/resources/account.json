@@ -1,0 +1,14 @@
+{
+  "name": "kribi",
+  "api_key": "",
+  "hostedZoneId": "ZG0Q0SSJS08BT",
+  "securityGroups": {
+    "http": "sg-b0c25acd",
+    "https": "sg-7ac35b07",
+    "ssh": "sg-ddc25aa0"
+  },
+  "loadBalancer": {
+    "httpPort": 80,
+    "httpsPort": 443
+  }
+}
