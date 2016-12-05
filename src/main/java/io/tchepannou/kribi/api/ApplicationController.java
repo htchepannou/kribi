@@ -69,17 +69,7 @@ public class ApplicationController {
     TransactionIdGenerator transactionIdGenerator;
 
     //-- Endpoints
-    @RequestMapping(value = "/descriptor/{name}", method = RequestMethod.GET)
-    @ApiOperation(value = "Return an application descriptor")
-    public Application descriptor(@PathVariable final String name) throws IOException {
-        final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        final String path = descriptorPath(name);
-        storageService.get(path, out);
-
-        return objectMapperBuilder.build().readValue(out.toByteArray(), Application.class);
-    }
-
-    @RequestMapping(value = "/deploy", method = RequestMethod.POST)
+    @RequestMapping(value = "/", method = RequestMethod.POST)
     @ApiOperation(value = "Deploy the application")
     public DeployResponse deploy(
             @RequestBody @Valid final DeployRequest request
@@ -94,7 +84,7 @@ public class ApplicationController {
         return response;
     }
 
-    @RequestMapping(value = "/undeploy", method = RequestMethod.POST)
+    @RequestMapping(value = "/", method = RequestMethod.DELETE)
     @ApiOperation(value = "Undeploy the application")
     public UndeployResponse undeploy(
             @RequestBody @Valid final UndeployRequest request
