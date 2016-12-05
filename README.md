@@ -1,7 +1,8 @@
 API for deploying application on the cloud.
 
 ### Build Status
-[![Build Status](https://travis-ci.org/htchepannou/kribi.svg?branch=master)](https://travis-ci.org/htchepannou/kribi)
+Master: [![Build Status](https://travis-ci.org/htchepannou/kribi.svg?branch=master)](https://travis-ci.org/htchepannou/kribi)
+
 
 # Prerequises
 - Java 8+
