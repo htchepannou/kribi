@@ -1,6 +1,5 @@
 package io.tchepannou.kribi.aws.impl;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
@@ -27,21 +26,18 @@ public class S3StorageService implements StorageService {
     AmazonS3 s3;
 
     @Autowired
-    AWSCredentialsProvider credentialsProvider;
+    TransferManager transferManager;
 
     //-- StorageService overrides
     @Override
     public void put(final String path, final InputStream in) throws IOException {
         LOGGER.info("put s3://{}/{}", bucket, path);
 
-        final TransferManager tx = new TransferManager(credentialsProvider);
-        final Upload upload = tx.upload(bucket, path, in, new ObjectMetadata());
+        final Upload upload = transferManager.upload(bucket, path, in, new ObjectMetadata());
         try {
             upload.waitForUploadResult();
         } catch (final InterruptedException e) {
             throw new IOException("Interrupted", e);
-        } finally {
-            tx.shutdownNow();
         }
     }
 
