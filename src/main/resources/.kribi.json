@@ -3,7 +3,7 @@
   "template": "springboot",
   "runAs": "kribi-ec2-role",
   "healthCheckPath": "/health",
-  "jvmOptions": "-Xmx1500M -Xms1500Mb",
+  "jvmOptions": "-Xmx728M -Xms728M",
   "instances": [
     {
       "region": "us-east-1",

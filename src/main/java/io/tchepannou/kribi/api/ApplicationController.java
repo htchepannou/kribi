@@ -7,6 +7,7 @@ import io.tchepannou.kribi.aws.AwsContext;
 import io.tchepannou.kribi.aws.AwsContextFactory;
 import io.tchepannou.kribi.client.DeployRequest;
 import io.tchepannou.kribi.client.DeployResponse;
+import io.tchepannou.kribi.client.ErrorResponse;
 import io.tchepannou.kribi.client.KribiRequest;
 import io.tchepannou.kribi.client.UndeployRequest;
 import io.tchepannou.kribi.client.UndeployResponse;
@@ -24,7 +25,10 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -156,6 +160,13 @@ public class ApplicationController {
         }
     }
 
+    @ExceptionHandler(KribiException.class)
+    public ResponseEntity<ErrorResponse> onKribiException(final KribiException ex){
+        final ErrorResponse resp = new ErrorResponse(ex.getCode(), ex.getMessage());
+        resp.setTransactionId(transactionIdGenerator.get());
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(resp);
+    }
 
     //-- Private
     private String descriptorPath(final String name){

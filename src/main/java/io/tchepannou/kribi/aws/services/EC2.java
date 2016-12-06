@@ -312,10 +312,9 @@ public class EC2 {
         final List<String> cmds = new ArrayList<>();
         cmds.add("echo SERVICE_ENVIRONMENT=" + env.name().toLowerCase() + " > service-profile");
         cmds.add("echo SERVICE_NAME=" + app.getName() + " >> service-profile");
-        cmds.add("echo SERVICE_NAME=" + app.getName() + " >> service-profile");
         cmds.add("echo SERVICE_USER=" + app.getName() + " >> service-profile");
         cmds.add("echo SERVICE_VERSION=" + deployRequest.getVersion() + " >> service-profile");
-        cmds.add("echo JVM_OPTS=" + app.getJvmOptions() + " >> service-profile");
+        cmds.add("echo JVM_OPTS=\\\"" + app.getJvmOptions() + "\\\" >> service-profile");
 
         exec(String.join(";", cmds), shell);
     }
@@ -371,7 +370,7 @@ public class EC2 {
     }
 
     Shell createShell(final Host host, final Application app) throws UnknownHostException {
-        int port = app.getServices().getSshPort();
+        final int port = app.getServices().getSshPort();
         return new SSH(host.getPublicIp(), port, SSH_USERNAME, context.getKeyPair().getPrivateKey());
     }
 
