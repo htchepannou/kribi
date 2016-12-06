@@ -5,6 +5,7 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.auth.PropertiesFileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.transfer.TransferManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,4 +33,8 @@ public class AwsConfiguration {
         }
     }
 
+    @Bean (destroyMethod = "shutdownNow")
+    TransferManager transferManager(){
+        return new TransferManager(awsCredentialsProvider());
+    }
 }

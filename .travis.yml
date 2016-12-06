@@ -17,3 +17,14 @@ after_success:
 notifications:
   email:
   - herve.tchepannou@gmail.com
+
+deploy:
+  - provider: s3
+    access_key_id: "$AWS_ACCESS_KEY"
+    secret_access_key: "$AWS_SECRET_KEY"
+    bucket: "io.tchepannou.kribi"
+    skip_cleanup: true
+    upload-dir: repository/kribi/$TRAVIS_COMMIT
+    local_dir: target/deploy
+    on:
+      branch: master
