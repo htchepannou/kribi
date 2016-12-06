@@ -36,7 +36,8 @@ public class CloudFormationInstaller implements Installer {
     }
 
     public void release(final ReleaseRequest releaseRequest){
-
+//        final String domainName = route53.deploy(releaseRequest);
+//        healthCheck(domainName, releaseRequest);
     }
 
     void healthCheck(final String domainName, final DeployRequest deployRequest) {

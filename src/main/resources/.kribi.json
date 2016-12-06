@@ -3,6 +3,7 @@
   "template": "springboot",
   "runAs": "kribi-ec2-role",
   "healthCheckPath": "/health",
+  "jvmOptions": "-Xmx728M -Xms728M",
   "instances": [
     {
       "region": "us-east-1",
@@ -15,6 +16,6 @@
     "https": false,
     "httpsPort": 8442,
     "ssh": true,
-    "sshPort" : 22
+    "sshPort": 22
   }
 }

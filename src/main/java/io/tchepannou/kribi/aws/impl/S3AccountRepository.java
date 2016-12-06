@@ -13,8 +13,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class S3AccountRepository implements AccountRepository {
-    private static final String ACCOUNT_FILE = "settings/account.json";
-    private static final String PRIVATE_KEY_FILE = "settings/key.pem";
+    public static final String ACCOUNT_FILE = "settings/account.json";
+    public static final String PRIVATE_KEY_FILE = "settings/key.pem";
 
     @Autowired
     Jackson2ObjectMapperBuilder objectMapperBuilder;
@@ -40,6 +40,7 @@ public class S3AccountRepository implements AccountRepository {
     public void update(final Account account) throws IOException {
         final String json = objectMapperBuilder.build().writeValueAsString(account);
         storageService.put(ACCOUNT_FILE, new ByteArrayInputStream(json.getBytes()));
+        this.account = account;
     }
 
     //-- Private
