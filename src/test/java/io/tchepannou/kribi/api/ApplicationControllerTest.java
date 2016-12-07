@@ -90,6 +90,8 @@ public class ApplicationControllerTest {
         final Application app = createApplication();
         when(applicationDescriptorService.load(any())).thenReturn(app);
 
+        when(applicationDescriptorService.isValid(any(), any())).thenReturn(true);
+
         // When
         final DeployResponse result = controller.deploy(request);
 
@@ -102,14 +104,13 @@ public class ApplicationControllerTest {
     }
 
     @Test(expected = KribiException.class)
-    public void shouldNotDeployInvalidApplication () throws Exception {
+    public void shouldNotDeployInvalidApplication() throws Exception {
         // Given
         when(applicationDescriptorService.isValid(any(), any())).thenReturn(false);
 
         // When
         controller.deploy(new DeployRequest());
     }
-
 
     @Test
     public void shouldUndeploy() throws Exception {
@@ -120,6 +121,8 @@ public class ApplicationControllerTest {
 
         final Application app = createApplication();
         when(applicationDescriptorService.load(any())).thenReturn(app);
+
+        when(applicationDescriptorService.isValid(any(), any())).thenReturn(true);
 
         // When
         final UndeployResponse result = controller.undeploy(request);
@@ -133,7 +136,7 @@ public class ApplicationControllerTest {
     }
 
     @Test(expected = KribiException.class)
-    public void shouldNotUndeployInvalidApplication () throws Exception {
+    public void shouldNotUndeployInvalidApplication() throws Exception {
         // Given
         when(applicationDescriptorService.isValid(any(), any())).thenReturn(false);
 
@@ -141,12 +144,11 @@ public class ApplicationControllerTest {
         controller.undeploy(new UndeployRequest());
     }
 
-
     @Test
     public void showInitArtifact() throws Exception {
         // Given
-        Application app = createApplication();
-        when (applicationDescriptorService.extract("gs-rest-service", "1.1")).thenReturn(app);
+        final Application app = createApplication();
+        when(applicationDescriptorService.extract("gs-rest-service", "1.1")).thenReturn(app);
 
         // When
         final ArtifactResponse result = controller.initArtifact("gs-rest-service", "1.1");
@@ -156,22 +158,7 @@ public class ApplicationControllerTest {
         assertThat(result.getApplication()).isEqualTo(app);
     }
 
-
-
     //-- Private
-    private Account createAccount(final String name) {
-        final Account acc = new Account();
-        acc.setName(name);
-        acc.getKeyPair().setName("kp-" + name);
-        acc.getKeyPair().setPrivateKey("PK---" + name);
-        acc.getLoadBalancer().setHttpPort(111);
-        acc.getLoadBalancer().setHttpsPort(222);
-        acc.getSecurityGroups().setHttp("http");
-        acc.getSecurityGroups().setHttps("https");
-        acc.getSecurityGroups().setSsh("ssh");
-        return acc;
-    }
-
     private DeployRequest createDeployRequest() {
         final DeployRequest request = new DeployRequest();
         request.setEnvironment(Environment.INT);
