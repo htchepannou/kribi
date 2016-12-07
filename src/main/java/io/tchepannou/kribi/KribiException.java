@@ -16,6 +16,7 @@ public class KribiException extends RuntimeException {
     public static final String ARTIFACT_MALFORMED = "ARTIFACT_MALFORMED";
     public static final String APPLICATION_DESCRIPTOR_MALFORMED = "APPLICATION_DESCRIPTOR_MALFORMED";
     public static final String APPLICATION_DESCRIPTOR_NOT_FOUND = "APPLICATION_DESCRIPTOR_NOT_FOUND";
+    public static final String ARTIFACT_NOT_FOUND = "ARTIFACT_NOT_FOUND";
 
     private final String code;
     private final String text;

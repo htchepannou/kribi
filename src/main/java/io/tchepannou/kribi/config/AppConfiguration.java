@@ -10,6 +10,7 @@ import io.tchepannou.kribi.filter.ApiKeyFilter;
 import io.tchepannou.kribi.filter.MDCFilter;
 import io.tchepannou.kribi.healthcheck.S3HealthCheck;
 import io.tchepannou.kribi.services.AccountRepository;
+import io.tchepannou.kribi.services.ApplicationDescriptorService;
 import io.tchepannou.kribi.services.StorageService;
 import io.tchepannou.kribi.services.TransactionIdGenerator;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,6 +40,11 @@ public class AppConfiguration {
     }
 
     //-- Services
+    @Bean
+    ApplicationDescriptorService applicationDescriptorService() {
+        return new ApplicationDescriptorService();
+    }
+
     @Bean
     @Scope(value = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
     TransactionIdGenerator transactionIdGenerator() {

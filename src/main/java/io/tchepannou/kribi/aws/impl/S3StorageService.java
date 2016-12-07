@@ -15,6 +15,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.function.Function;
 
 @ConfigurationProperties("kribi.aws")
 public class S3StorageService implements StorageService {
@@ -47,6 +48,24 @@ public class S3StorageService implements StorageService {
 
         try (final S3Object obj = s3.getObject(bucket, path)) {
             IOUtils.copy(obj.getObjectContent(), out);
+        }
+    }
+
+    @Override
+    public <R> R get(final String path, final Function<InputStream, R> consumer) throws IOException{
+        LOGGER.info("get s3://{}/{}", bucket, path);
+
+        try (final S3Object obj = s3.getObject(bucket, path)) {
+            return consumer.apply(obj.getObjectContent());
+        }
+    }
+
+    @Override
+    public boolean exists(final String path){
+        try (final S3Object obj = s3.getObject(bucket, path)) {
+            return true;
+        }catch(Exception e){
+            return false;
         }
     }
 
