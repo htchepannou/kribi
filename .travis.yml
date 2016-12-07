@@ -28,3 +28,6 @@ deploy:
     local_dir: target/deploy
     on:
       branch: master
+
+after_deploy:
+  - wget http://kribi.tchepannou.io/v1/application/kribi/init_artifact?version=$TRAVIS_COMMIT
