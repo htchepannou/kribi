@@ -1,6 +1,6 @@
 package io.tchepannou.kribi.client;
 
-public class ReleaseRequest extends DeployRequest{
+public class ReleaseRequest extends KribiRequest{
     private boolean delete;
 
     public boolean isDelete() {

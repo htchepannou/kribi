@@ -28,7 +28,7 @@ public class AccountController {
     @ApiOperation(value = "Generate account's API key")
     public String generateApiKey() throws IOException {
         final Account account = accountRepository.findAccount();
-        KeyPair keyPair = Account.generateApiKeyPair(account);
+        KeyPair keyPair = account.generateApiKeyPair();
         account.setApiKey(keyPair.getPrivateKey());
         accountRepository.update(account);
 

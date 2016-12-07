@@ -12,7 +12,7 @@ script:
   - mvn clean install
 
 after_success:
-  - ./deploy.sh
+  - ./deploy_before.sh
 
 notifications:
   email:
@@ -30,4 +30,4 @@ deploy:
       branch: master
 
 after_deploy:
-  - wget http://kribi.tchepannou.io/v1/application/kribi/init_artifact?version=$TRAVIS_COMMIT
+  - ./deploy_after.sh

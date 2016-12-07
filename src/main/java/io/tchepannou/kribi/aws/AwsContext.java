@@ -18,7 +18,6 @@ import io.tchepannou.kribi.model.aws.AwsKeyPair;
 import io.tchepannou.kribi.model.aws.AwsLoadBalancer;
 import io.tchepannou.kribi.model.aws.AwsSecurityGroups;
 import io.tchepannou.kribi.services.Deployer;
-import io.tchepannou.kribi.services.Installer;
 
 public class AwsContext {
     private String hostedZoneId;
@@ -50,17 +49,6 @@ public class AwsContext {
                 .withCredentials(credentialsProvider)
                 .withRegion(region)
                 .build();
-    }
-
-    public Installer getInstaller(final Application application) {
-        final ApplicationTemplate template = application.getTemplate();
-        if (ApplicationTemplate.springboot.equals(template)) {
-            return new CloudFormationInstaller(this);
-        } else if (ApplicationTemplate.javaapp.equals(template)){
-            return new JavaAppInstaller(this);
-        } else {
-            throw new KribiException(KribiException.INSTALLER_NOT_AVAILABLE, "No installer available for application template: " + template);
-        }
     }
 
     public Deployer getDeployer(final Application application) {
