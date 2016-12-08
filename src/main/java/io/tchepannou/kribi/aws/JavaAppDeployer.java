@@ -4,12 +4,16 @@ import com.amazonaws.services.ec2.model.Reservation;
 import io.tchepannou.kribi.aws.services.EC2;
 import io.tchepannou.kribi.client.DeployRequest;
 import io.tchepannou.kribi.client.DeployResponse;
+import io.tchepannou.kribi.client.ReleaseRequest;
+import io.tchepannou.kribi.client.ReleaseResponse;
 import io.tchepannou.kribi.client.UndeployRequest;
 import io.tchepannou.kribi.client.UndeployResponse;
 import io.tchepannou.kribi.model.Cluster;
+import io.tchepannou.kribi.model.Environment;
 import io.tchepannou.kribi.model.Host;
 import io.tchepannou.kribi.services.Deployer;
 
+import java.util.Collection;
 import java.util.Collections;
 
 /**
@@ -24,17 +28,15 @@ import java.util.Collections;
  */
 public class JavaAppDeployer implements Deployer{
     private final EC2 ec2;
-    private final AwsContext context;
 
     public JavaAppDeployer(final AwsContext context) {
         this.ec2 = new EC2(context);
-        this.context = context;
     }
 
     @Override
-    public DeployResponse deploy(final DeployRequest request) {
-        final Cluster cluster = deployCluster(request);
-        context.getInstaller(request.getApplication()).install(request, cluster);
+    public DeployResponse deploy(final DeployRequest deployRequest) {
+        final Cluster cluster = deployCluster(deployRequest);
+        ec2.install(deployRequest, cluster);
 
         return new DeployResponse(cluster);
     }
@@ -44,6 +46,16 @@ public class JavaAppDeployer implements Deployer{
         ec2.delete(request);
 
         return new UndeployResponse();
+    }
+
+    @Override
+    public ReleaseResponse release(final ReleaseRequest request) {
+        return new ReleaseResponse();
+    }
+
+    @Override
+    public Collection<String> getVersions(final String name, final Environment env){
+        return ec2.getVersions(name, env);
     }
 
     private Cluster deployCluster (final DeployRequest request){

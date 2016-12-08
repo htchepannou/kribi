@@ -15,20 +15,20 @@ public class Account {
     private AwsSecurityGroups securityGroups = new AwsSecurityGroups();
     private AwsLoadBalancer loadBalancer = new AwsLoadBalancer();
 
-    public static KeyPair generateApiKeyPair(final Account account) {
+    public KeyPair generateApiKeyPair() {
         final String publicKey = UUID.randomUUID().toString();
-        final String privateKey = generatePrivateKey(publicKey, account);
+        final String privateKey = generatePrivateKey(publicKey);
 
         return new KeyPair(publicKey, privateKey);
     }
 
-    private static String generatePrivateKey(final String publicKey, final Account account){
-        final String salt = account.getName() + "." + account.getKeyPair().getPrivateKey();
+    private String generatePrivateKey(final String publicKey){
+        final String salt = getName() + "." + getKeyPair().getPrivateKey();
         return DigestUtils.md5Hex(publicKey + "-" + salt);
     }
 
     public boolean apiKeyMatches(final String apiKey) {
-        final String privateKey = generatePrivateKey(apiKey, this);
+        final String privateKey = generatePrivateKey(apiKey);
         return privateKey.equals(this.apiKey);
     }
 

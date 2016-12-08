@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -68,11 +69,8 @@ public class EC2 {
 
     //-- Public
     public Reservation create(final DeployRequest deployRequest) {
-        final Optional<Reservation> prev = findReservation(deployRequest);
-        if (prev.isPresent()) {
-            LOGGER.error("This version of the application has already been deployed");
-            throw new KribiException(KribiException.APPLICATION_ALREADY_DEPLOYED, "This version of the application has already been deployed");
-        }
+        ensureNotAlreadyDeployed(deployRequest);
+        ensureNotTooManyRequests(deployRequest);
 
         final Reservation reservation = createInstances(deployRequest);
         tag(deployRequest, reservation);
@@ -90,8 +88,33 @@ public class EC2 {
         }
     }
 
+    public Collection<String> getVersions(final String name, final Environment env) {
+        return ec2.describeInstances().getReservations().stream()
+                .map(r -> r.getInstances().get(0))
+                .filter(i -> hasTag(TAG_NAME, name, i) && hasTag(TAG_ENVIRONMENT, env.name(), i))
+                .map(i -> getTag(TAG_VERSION, i))
+                .filter(v -> v.isPresent())
+                .map(v -> v.get().getValue())
+                .collect(Collectors.toSet());
+    }
+
     //-- Private
-    Reservation createInstances(final DeployRequest deployRequest) {
+    private void ensureNotAlreadyDeployed(final DeployRequest deployRequest) {
+        final Optional<Reservation> prev = findReservation(deployRequest);
+        if (prev.isPresent()) {
+            LOGGER.error("This version of the application has already been deployed");
+            throw new KribiException(KribiException.APPLICATION_ALREADY_DEPLOYED, "This version of the application has already been deployed");
+        }
+    }
+
+    private void ensureNotTooManyRequests(final DeployRequest deployRequest) {
+        final Collection<String> versions = getVersions(deployRequest.getApplicationName(), deployRequest.getEnvironment());
+        if (versions.size() >= 2) {
+            throw new KribiException(KribiException.TOO_MANY_INSTANCES_DEPLOYED, "The application has already " + versions.size() + " version deployed.");
+        }
+    }
+
+    private Reservation createInstances(final DeployRequest deployRequest) {
         final Application app = deployRequest.getApplication();
         final String region = deployRequest.getRegion();
         final Optional<Instance> instance = app.getInstance(region);
@@ -123,7 +146,7 @@ public class EC2 {
         return reservation;
     }
 
-    RunInstancesRequest shutdownBehavior(final DeployRequest deployRequest, final RunInstancesRequest request) {
+    private RunInstancesRequest shutdownBehavior(final DeployRequest deployRequest, final RunInstancesRequest request) {
         final Application app = deployRequest.getApplication();
         if (ApplicationTemplate.javaapp.equals(app.getTemplate())) {
             request.setInstanceInitiatedShutdownBehavior(ShutdownBehavior.Terminate);
@@ -131,14 +154,14 @@ public class EC2 {
         return request;
     }
 
-    Optional<Role> getRole(final String roleName) {
+    private Optional<Role> getRole(final String roleName) {
         LOGGER.info("Resolving Service Role {}", roleName);
         return iam.listRoles().getRoles().stream()
                 .filter(r -> r.getRoleName().equals(roleName))
                 .findFirst();
     }
 
-    void deleteInstances(final UndeployRequest undeployRequest) {
+    private void deleteInstances(final UndeployRequest undeployRequest) {
         final String instanceName = getInstanceName(undeployRequest);
         final Optional<Reservation> reservation = findReservation(undeployRequest);
         if (!reservation.isPresent()) {
@@ -154,7 +177,7 @@ public class EC2 {
         ec2.terminateInstances(request);
     }
 
-    List<String> getSecurityGroups(final Application app) {
+    private List<String> getSecurityGroups(final Application app) {
         final Set<String> securityGroups = new HashSet<>();
         if (app.getServices().isSsh()) {
             securityGroups.add(context.getSecurityGroups().getSsh());
@@ -170,13 +193,13 @@ public class EC2 {
                 .collect(Collectors.toList());
     }
 
-    List<String> getInstanceIds(final Reservation reservation) {
+    private List<String> getInstanceIds(final Reservation reservation) {
         return reservation.getInstances().stream()
                 .map(i -> i.getInstanceId())
                 .collect(Collectors.toList());
     }
 
-    Optional<Reservation> findReservation(final KribiRequest request) {
+    private Optional<Reservation> findReservation(final KribiRequest request) {
         LOGGER.info("Resolving Instance(s) {}", getInstanceName(request));
         final DescribeInstancesResult result = ec2.describeInstances();
         return result.getReservations().stream()
@@ -208,12 +231,6 @@ public class EC2 {
         return false;
     }
 
-    private Optional<Tag> getTag(final String name, final com.amazonaws.services.ec2.model.Instance instance) {
-        return instance.getTags().stream()
-                .filter(t -> t.getKey().equals(name))
-                .findFirst();
-    }
-
     private String getInstanceName(final KribiRequest request) {
         final Application app = request.getApplication();
         final Environment env = request.getEnvironment();
@@ -221,7 +238,42 @@ public class EC2 {
         return AwsSupport.nomalizeName(name);
     }
 
-    void tag(final DeployRequest deployRequest, final Reservation reservation) {
+    private Reservation waitForReady(final Reservation reservation) {
+        LOGGER.info("Waiting for the cluster to be ready");
+
+        final List<String> instanceIds = getInstanceIds(reservation);
+        final long delayMillis = DELAY_SECONDS * 1000;
+        for (int i = 0; i < MAX_RETRIES; i++) {
+            if (ready(instanceIds)) {
+
+                final DescribeInstancesRequest request = new DescribeInstancesRequest()
+                        .withInstanceIds(instanceIds);
+                return ec2.describeInstances(request).getReservations().get(0);
+
+            } else {
+                wait(delayMillis, "... Cluster not ready yet. waiting for " + DELAY_SECONDS + " seconds");
+            }
+        }
+
+        throw new KribiException(KribiException.DEPLOYMENT_TIMEOUT, "EC2 instance not ready after " + (MAX_RETRIES + DELAY_SECONDS) + " secs");
+    }
+
+    private boolean ready(final List<String> instanceIds) {
+        final DescribeInstancesRequest request = new DescribeInstancesRequest()
+                .withInstanceIds(instanceIds);
+        final DescribeInstancesResult result = ec2.describeInstances(request);
+        for (final com.amazonaws.services.ec2.model.Instance instance : result.getReservations().get(0).getInstances()) {
+            final String state = instance.getState().getName();
+            LOGGER.info("... Instance {} is {}", instance.getInstanceId(), state);
+            if (!"running".equalsIgnoreCase(state)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    //-- Tags
+    private void tag(final DeployRequest deployRequest, final Reservation reservation) {
         final Application app = deployRequest.getApplication();
         final Environment env = deployRequest.getEnvironment();
 
@@ -241,7 +293,7 @@ public class EC2 {
         ec2.createTags(request);
     }
 
-    void addTag(final String name, final String value, final List<Tag> tags) {
+    private void addTag(final String name, final String value, final List<Tag> tags) {
         if (value == null || value.length() == 0) {
             return;
         }
@@ -250,46 +302,19 @@ public class EC2 {
         tags.add(new Tag(name, value));
     }
 
-    Reservation waitForReady(final Reservation reservation) {
-        LOGGER.info("Waiting for the cluster to be ready");
-
-        final List<String> instanceIds = getInstanceIds(reservation);
-        final long delayMillis = DELAY_SECONDS * 1000;
-        for (int i = 0; i < MAX_RETRIES; i++) {
-            if (ready(instanceIds)) {
-
-                final DescribeInstancesRequest request = new DescribeInstancesRequest()
-                        .withInstanceIds(instanceIds);
-                return ec2.describeInstances(request).getReservations().get(0);
-
-            } else {
-                LOGGER.info("... Cluster not ready yet. waiting for {} seconds", delayMillis / 1000);
-                try {
-                    Thread.sleep(delayMillis);
-                } catch (final InterruptedException e) {
-                    throw new KribiException(KribiException.DEPLOYMENT_INTERRUPTED, "Process Interrupted");
-                }
-            }
-        }
-
-        throw new KribiException(KribiException.DEPLOYMENT_TIMEOUT, "EC2 instance not ready after " + (MAX_RETRIES + DELAY_SECONDS) + " secs");
+    private Optional<Tag> getTag(final String name, final com.amazonaws.services.ec2.model.Instance instance) {
+        return instance.getTags().stream()
+                .filter(t -> t.getKey().equals(name))
+                .findFirst();
     }
 
-    boolean ready(final List<String> instanceIds) {
-        final DescribeInstancesRequest request = new DescribeInstancesRequest()
-                .withInstanceIds(instanceIds);
-        final DescribeInstancesResult result = ec2.describeInstances(request);
-        for (final com.amazonaws.services.ec2.model.Instance instance : result.getReservations().get(0).getInstances()) {
-            final String state = instance.getState().getName();
-            LOGGER.info("... Instance {} is {}", instance.getInstanceId(), state);
-            if (!"running".equalsIgnoreCase(state)) {
-                return false;
-            }
-        }
-        return true;
+    boolean hasTag(final String name, final String value, final com.amazonaws.services.ec2.model.Instance instance) {
+        final Optional<Tag> tag = getTag(name, instance);
+        return tag.isPresent() ? value.equalsIgnoreCase(tag.get().getValue()) : false;
     }
 
-    void install(final DeployRequest deployRequest, final Host host) {
+    //-- Install
+    private void install(final DeployRequest deployRequest, final Host host) {
         try {
             waitForSSH(host, deployRequest.getApplication());
 
@@ -303,7 +328,7 @@ public class EC2 {
         }
     }
 
-    void copyProfile(final DeployRequest deployRequest, final Shell shell, final Host host) {
+    private void copyProfile(final DeployRequest deployRequest, final Shell shell, final Host host) {
         final Application app = deployRequest.getApplication();
         final Environment env = deployRequest.getEnvironment();
 
@@ -319,7 +344,7 @@ public class EC2 {
         exec(String.join(";", cmds), shell);
     }
 
-    void copyScripts(final DeployRequest deployRequest, final Shell shell, final Host host) {
+    private void copyScripts(final DeployRequest deployRequest, final Shell shell, final Host host) {
         final Application app = deployRequest.getApplication();
 
         LOGGER.info("Copying install scripts to {}@{}", SSH_USERNAME, host.getPublicIp());
@@ -343,7 +368,7 @@ public class EC2 {
         exec("sudo ./install.sh", shell);
     }
 
-    void exec(final String cmd, final Shell shell) {
+    private void exec(final String cmd, final Shell shell) {
         try {
             new Shell.Plain(shell).exec(cmd);
         } catch (final IOException e) {
@@ -351,7 +376,7 @@ public class EC2 {
         }
     }
 
-    void scp(final File file, final Shell shell, final Host host) {
+    private void scp(final File file, final Shell shell, final Host host) {
         try (final InputStream in = new FileInputStream(file)) {
             final ByteArrayOutputStream out = new ByteArrayOutputStream();
             final ByteArrayOutputStream err = new ByteArrayOutputStream();
@@ -369,12 +394,12 @@ public class EC2 {
         }
     }
 
-    Shell createShell(final Host host, final Application app) throws UnknownHostException {
+    private Shell createShell(final Host host, final Application app) throws UnknownHostException {
         final int port = app.getServices().getSshPort();
         return new SSH(host.getPublicIp(), port, SSH_USERNAME, context.getKeyPair().getPrivateKey());
     }
 
-    void waitForSSH(final Host host, final Application app) throws UnknownHostException {
+    private void waitForSSH(final Host host, final Application app) throws UnknownHostException {
         LOGGER.info("Waiting SSH port to be available on {}", host.getPublicIp());
 
         final long delayMillis = DELAY_SECONDS * 1000;
@@ -394,7 +419,7 @@ public class EC2 {
         throw new KribiException(KribiException.SSH_ERROR, "Unable to establish SSH connection");
     }
 
-    void wait(final long delayMillis, final String msg) {
+    private void wait(final long delayMillis, final String msg) {
         LOGGER.info(msg);
         try {
             Thread.sleep(delayMillis);

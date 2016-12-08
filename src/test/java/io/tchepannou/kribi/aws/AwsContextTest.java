@@ -28,19 +28,6 @@ public class AwsContextTest {
         context = new AwsContext(credentialsProvider, REGION);
     }
 
-    //-- getInstaller
-    @Test
-    public void getInstallerShouldReturnCloudFormationInstallerForSpringBoot(){
-        app.setTemplate(ApplicationTemplate.springboot);
-        assertThat(context.getInstaller(app)).isInstanceOf(CloudFormationInstaller.class);
-    }
-
-    @Test(expected = KribiException.class)
-    public void getInstallerShouldThrowExceptionForUnknownTemplate(){
-        app.setTemplate(ApplicationTemplate.none);
-        context.getInstaller(app);
-    }
-    
     //-- getDeployer
     @Test
     public void getDeployerShouldReturnCloudFormationDeployer(){
