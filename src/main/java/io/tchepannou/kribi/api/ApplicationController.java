@@ -67,7 +67,8 @@ public class ApplicationController {
     public DeployResponse deploy(
             @PathVariable @ApiParam(value = "Name of the application") final String name,
             @RequestParam(required = true) @ApiParam(value = "Version of the application") final String version,
-            @RequestParam(required = true) @ApiParam(value = "Environment where to deploy", defaultValue = "TEST", allowableValues = "TEST,INT,PROD") final String environment,
+            @RequestParam(required = true) @ApiParam(value = "Environment where to deploy", defaultValue = "TEST", allowableValues = "TEST,INT,PROD")
+            final String environment,
             @RequestParam(required = true) @ApiParam(value = "Region where to deploy", defaultValue = "us-east-1") final String region,
             @RequestParam(required = false) @ApiParam(value = "Automatically release the new version", defaultValue = "true") final boolean release,
             @RequestParam(required = false) @ApiParam(value = "If release, undeploy previous version", defaultValue = "true") final boolean undeployOld
@@ -85,7 +86,7 @@ public class ApplicationController {
         final DeployResponse response = context.getDeployer(request.getApplication()).deploy(request);
 
         /* Release */
-        if (release){
+        if (release) {
             final ReleaseResponse releaseResponse = release(name, version, environment, region, undeployOld);
             response.setReleaseResponse(releaseResponse);
         }
@@ -99,9 +100,9 @@ public class ApplicationController {
     public UndeployResponse undeploy(
             @PathVariable @ApiParam(value = "Name of the application") final String name,
             @RequestParam(required = true) @ApiParam(value = "Version of the application") final String version,
-            @RequestParam(required = true) @ApiParam(value = "Environment", allowableValues = "TEST,INT,PROD") final String environment,
-            @RequestParam(required = true) @ApiParam(value = "Region") final String region
-    ) throws IOException {
+            @RequestParam(required = true) @ApiParam(value = "Environment where to undeploy", defaultValue = "TEST", allowableValues = "TEST,INT,PROD") final String environment,
+            @RequestParam(required = true) @ApiParam(value = "Region where to undeploy", defaultValue = "us-east-1") final String region
+            ) throws IOException {
         LOGGER.info("Undeploying {}.{} on {} in environment {}", name, version, region, environment);
 
         ensureArtifactExists(name, version);
@@ -121,8 +122,9 @@ public class ApplicationController {
     public ReleaseResponse release(
             @PathVariable @ApiParam(value = "Name of the application") final String name,
             @RequestParam(required = true) @ApiParam(value = "Version of the application") final String version,
-            @RequestParam(required = true) @ApiParam(value = "Environment", allowableValues = "TEST,INT,PROD") final String environment,
-            @RequestParam(required = true) @ApiParam(value = "Region") final String region,
+            @RequestParam(required = true) @ApiParam(value = "Environment where to release", defaultValue = "TEST", allowableValues = "TEST,INT,PROD")
+            final String environment,
+            @RequestParam(required = true) @ApiParam(value = "Region where to release", defaultValue = "us-east-1") final String region,
             @RequestParam(required = false) @ApiParam(value = "If release, undeploy previous version", defaultValue = "true") final boolean undeployOld
     ) throws IOException {
         LOGGER.info("Releasing {}.{} on {} in environment {}", name, version, region, environment);
@@ -140,16 +142,16 @@ public class ApplicationController {
         initResponse(request, response);
 
         /* Delete previous version */
-        if (undeployOld){
-            Collection<String> versions = deployer.getVersions(name, Environment.valueOf(environment.toUpperCase()));
-            LOGGER.info("{} version(s) to undeploy", versions.size()-1);
+        if (undeployOld) {
+            final Collection<String> versions = deployer.getVersions(name, Environment.valueOf(environment.toUpperCase()));
+            LOGGER.info("{} version(s) to undeploy", versions.size() - 1);
 
             for (final String ver : versions) {
-                if (!ver.equals(version)){
+                if (!ver.equals(version)) {
                     try {
                         final UndeployResponse undeployResponse = undeploy(name, ver, environment, region);
                         response.getUndeployResponses().add(undeployResponse);
-                    } catch (KribiException e){
+                    } catch (final KribiException e) {
                         final ErrorResponse errorResponse = new ErrorResponse(e.getCode(), e.getMessage());
                         initResponse(request, errorResponse);
                         response.addUndeployError(errorResponse);
@@ -206,7 +208,7 @@ public class ApplicationController {
         request.setApplication(app);
     }
 
-    private void initResponse(final KribiRequest request, final KribiResponse response){
+    private void initResponse(final KribiRequest request, final KribiResponse response) {
         response.setApplicationName(request.getApplicationName());
         response.setEnvironment(request.getEnvironment());
         response.setRegion(request.getRegion());

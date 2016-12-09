@@ -25,7 +25,7 @@ public class AwsConfiguration {
 
     @Bean
     AWSCredentialsProvider awsCredentialsProvider() {
-        if (!env.acceptsProfiles("prod")){
+        if (env.acceptsProfiles("dev")) {
             final String home = System.getProperty("user.home");
             return new PropertiesFileCredentialsProvider(home + "/.aws/credentials");
         } else {
@@ -33,8 +33,8 @@ public class AwsConfiguration {
         }
     }
 
-    @Bean (destroyMethod = "shutdownNow")
-    TransferManager transferManager(){
+    @Bean(destroyMethod = "shutdownNow")
+    TransferManager transferManager() {
         return new TransferManager(awsCredentialsProvider());
     }
 }
