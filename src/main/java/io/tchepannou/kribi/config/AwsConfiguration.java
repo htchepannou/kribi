@@ -25,7 +25,7 @@ public class AwsConfiguration {
 
     @Bean
     AWSCredentialsProvider awsCredentialsProvider() {
-        if (env.acceptsProfiles("dev")){
+        if (!env.acceptsProfiles("prod")){
             final String home = System.getProperty("user.home");
             return new PropertiesFileCredentialsProvider(home + "/.aws/credentials");
         } else {
