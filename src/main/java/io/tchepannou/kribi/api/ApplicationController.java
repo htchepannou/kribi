@@ -62,7 +62,7 @@ public class ApplicationController {
     ApplicationDescriptorService applicationDescriptorService;
 
     //-- Endpoints
-    @RequestMapping(value = "/{name}/deploy", method = RequestMethod.POST)
+    @RequestMapping(value = "/{name}/deploy", method = RequestMethod.GET)
     @ApiOperation(value = "Deploy the application")
     public DeployResponse deploy(
             @PathVariable @ApiParam(value = "Name of the application") final String name,
@@ -94,7 +94,7 @@ public class ApplicationController {
         return response;
     }
 
-    @RequestMapping(value = "/{name}/undeploy", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/{name}/undeploy", method = RequestMethod.GET)
     @ApiOperation(value = "Undeploy the application")
     public UndeployResponse undeploy(
             @PathVariable @ApiParam(value = "Name of the application") final String name,
@@ -116,7 +116,7 @@ public class ApplicationController {
 
     }
 
-    @RequestMapping(value = "/{name}/release", method = RequestMethod.POST)
+    @RequestMapping(value = "/{name}/release", method = RequestMethod.GET)
     @ApiOperation(value = "Release the application")
     public ReleaseResponse release(
             @PathVariable @ApiParam(value = "Name of the application") final String name,
@@ -162,7 +162,7 @@ public class ApplicationController {
 
     }
 
-    @RequestMapping(value = "/{name}/init_artifact", method = RequestMethod.POST)
+    @RequestMapping(value = "/{name}/init_artifact", method = RequestMethod.GET)
     @ApiOperation(value = "Initialize the application artifact")
     public ArtifactResponse initArtifact(
             @PathVariable @ApiParam(value = "Name of the application") final String name,

@@ -234,7 +234,7 @@ public class EC2 {
     private String getInstanceName(final KribiRequest request) {
         final Application app = request.getApplication();
         final Environment env = request.getEnvironment();
-        final String name = String.format("%s_%s_%s", app.getName(), env, request.getVersion());
+        final String name = String.format("%s_%s_%s", app.getName(), env, AwsSupport.shortenVersion(request.getVersion()));
         return AwsSupport.nomalizeName(name);
     }
 

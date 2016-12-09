@@ -124,7 +124,7 @@ public class ELB {
     private String getLoadBalancerName(final KribiRequest deployRequest) {
         final Application app = deployRequest.getApplication();
         final Environment env = deployRequest.getEnvironment();
-        final String name = String.format("ELB_%s_%s_%s", app.getName(), env, deployRequest.getVersion());
+        final String name = String.format("ELB_%s_%s_%s", app.getName(), env, AwsSupport.shortenVersion(deployRequest.getVersion()));
         return AwsSupport.nomalizeName(name);
     }
 
