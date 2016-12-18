@@ -30,12 +30,7 @@ import io.tchepannou.kribi.model.aws.ApplicationTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -89,13 +84,17 @@ public class EC2 {
     }
 
     public Collection<String> getVersions(final String name, final Environment env) {
-        return ec2.describeInstances().getReservations().stream()
-                .map(r -> r.getInstances().get(0))
-                .filter(i -> hasTag(TAG_NAME, name, i) && hasTag(TAG_ENVIRONMENT, env.name(), i))
-                .map(i -> getTag(TAG_VERSION, i))
-                .filter(v -> v.isPresent())
-                .map(v -> v.get().getValue())
-                .collect(Collectors.toSet());
+        final List<String> versions = new ArrayList<>();
+        for (final Reservation reservation : ec2.describeInstances().getReservations()) {
+            final com.amazonaws.services.ec2.model.Instance instance = reservation.getInstances().get(0);
+            if (hasTag(TAG_NAME, name, instance) && hasTag(TAG_ENVIRONMENT, env.name(), instance)) {
+                final Optional<Tag> version = getTag(TAG_VERSION, instance);
+                if (version.isPresent()) {
+                    versions.add(version.get().getValue());
+                }
+            }
+        }
+        return versions;
     }
 
     //-- Private
@@ -348,21 +347,7 @@ public class EC2 {
         final Application app = deployRequest.getApplication();
 
         LOGGER.info("Copying install scripts to {}@{}", SSH_USERNAME, host.getPublicIp());
-
-        final String path = "installer/" + app.getTemplate();
-        final URL url = getClass().getClassLoader().getResource(path);
-        if (url == null) {
-            throw new KribiException(KribiException.INSTALL_SCRIPTS_NOT_FOUND, "Unable to locate installer scripts in " + path);
-        }
-
-        final File dir = new File(url.getFile());
-        final File[] files = dir.listFiles();
-        LOGGER.info("Copying scripts from {} file(s) from {}", files != null ? files.length : 0, dir);
-        if (files != null) {
-            for (final File f : files) {
-                scp(f, shell, host);
-            }
-        }
+        exec("aws s3 sync s3://io.tchepannou.kribi/installer/" + app.getTemplate() + " .", shell);
     }
 
     private void runInstaller(final Shell shell, final Host host) {
@@ -377,24 +362,6 @@ public class EC2 {
             new Shell.Plain(shell).exec(cmd);
         } catch (final IOException e) {
             throw new KribiException(KribiException.SSH_ERROR, "Unable to execute: " + cmd, e);
-        }
-    }
-
-    private void scp(final File file, final Shell shell, final Host host) {
-        try (final InputStream in = new FileInputStream(file)) {
-            final ByteArrayOutputStream out = new ByteArrayOutputStream();
-            final ByteArrayOutputStream err = new ByteArrayOutputStream();
-
-            LOGGER.info(".... scp {} {}@{}:~/{}", file.getAbsolutePath(), SSH_USERNAME, host.getPublicIp(), file.getName());
-            shell.exec(
-                    String.format("cat > %s", file.getName()),
-                    in,
-                    out,
-                    err
-            );
-
-        } catch (final IOException e) {
-            throw new KribiException(KribiException.SSH_ERROR, "Unable to copy " + file.getAbsolutePath() + " to remote host", e);
         }
     }
 

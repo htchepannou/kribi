@@ -144,7 +144,7 @@ public class ApplicationController {
         /* Delete previous version */
         if (undeployOld) {
             final Collection<String> versions = deployer.getVersions(name, Environment.valueOf(environment.toUpperCase()));
-            LOGGER.info("{} version(s) to undeploy", versions.size() - 1);
+            LOGGER.info("Current version(s): ", versions);
 
             for (final String ver : versions) {
                 if (!ver.equals(version)) {
