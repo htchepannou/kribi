@@ -126,14 +126,6 @@ public class ApplicationControllerTest {
         assertThat(result).isEqualTo(response);
     }
 
-    @Test(expected = KribiException.class)
-    public void shouldNotUndeployInvalidApplication() throws Exception {
-        // Given
-        when(applicationDescriptorService.isValid(any(), any())).thenReturn(false);
-
-        // When
-        controller.undeploy("foo", "1.1", "int", "us-west-1");
-    }
 
     @Test
     public void shouldRelease() throws Exception {
