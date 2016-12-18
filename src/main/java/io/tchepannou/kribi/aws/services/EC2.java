@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 public class EC2 {
     private static final Logger LOGGER = LoggerFactory.getLogger(EC2.class);
     private static final String SSH_USERNAME = "ec2-user";
-    private static final int DELAY_SECONDS = 60;
+    private static final int DELAY_SECONDS = 30;
     private static final int MAX_RETRIES = 10;
     private static final String TAG_NAME = "Name";
     private static final String TAG_APP_NAME = "AppName";
@@ -86,12 +86,18 @@ public class EC2 {
     public Collection<String> getVersions(final String name, final Environment env) {
         final List<String> versions = new ArrayList<>();
         for (final Reservation reservation : ec2.describeInstances().getReservations()) {
-            final com.amazonaws.services.ec2.model.Instance instance = reservation.getInstances().get(0);
-            if (hasTag(TAG_APP_NAME, name, instance) && hasTag(TAG_ENVIRONMENT, env.name(), instance)) {
-                final Optional<Tag> version = getTag(TAG_VERSION, instance);
-                if (version.isPresent()) {
-                    versions.add(version.get().getValue());
+            for (final com.amazonaws.services.ec2.model.Instance instance : reservation.getInstances()) {
+                if (isTerminated(instance)) {
+                    continue;
                 }
+
+                if (hasTag(TAG_APP_NAME, name, instance) && hasTag(TAG_ENVIRONMENT, env.name(), instance)) {
+                    final Optional<Tag> version = getTag(TAG_VERSION, instance);
+                    if (version.isPresent()) {
+                        versions.add(version.get().getValue());
+                    }
+                }
+                break;
             }
         }
         return versions;
@@ -109,7 +115,7 @@ public class EC2 {
     private void ensureNotTooManyRequests(final DeployRequest deployRequest) {
         final Collection<String> versions = getVersions(deployRequest.getApplicationName(), deployRequest.getEnvironment());
         if (versions.size() >= 2) {
-            throw new KribiException(KribiException.TOO_MANY_INSTANCES_DEPLOYED, "The application has already " + versions.size() + " version deployed.");
+            throw new KribiException(KribiException.TOO_MANY_INSTANCES_DEPLOYED, "The application has too many version deployed: " + versions);
         }
     }
 
@@ -215,7 +221,7 @@ public class EC2 {
         }
 
         for (final com.amazonaws.services.ec2.model.Instance instance : instances) {
-            if (instance.getState().getName().equals("terminated")) {
+            if (isTerminated(instance)) {
                 continue;
             }
 
@@ -228,6 +234,10 @@ public class EC2 {
             }
         }
         return false;
+    }
+
+    private boolean isTerminated(final com.amazonaws.services.ec2.model.Instance instance) {
+        return "terminated".equals(instance.getState().getName());
     }
 
     private String getInstanceName(final KribiRequest request) {
