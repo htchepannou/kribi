@@ -92,6 +92,7 @@ public class ApplicationController {
         }
 
         initResponse(request, response);
+        LOGGER.info("SUCCESS");
         return response;
     }
 
@@ -100,12 +101,11 @@ public class ApplicationController {
     public UndeployResponse undeploy(
             @PathVariable @ApiParam(value = "Name of the application") final String name,
             @RequestParam(required = true) @ApiParam(value = "Version of the application") final String version,
-            @RequestParam(required = true) @ApiParam(value = "Environment where to undeploy", defaultValue = "TEST", allowableValues = "TEST,INT,PROD") final String environment,
+            @RequestParam(required = true) @ApiParam(value = "Environment where to undeploy", defaultValue = "TEST", allowableValues = "TEST,INT,PROD")
+            final String environment,
             @RequestParam(required = true) @ApiParam(value = "Region where to undeploy", defaultValue = "us-east-1") final String region
-            ) throws IOException {
+    ) throws IOException {
         LOGGER.info("Undeploying {}.{} on {} in environment {}", name, version, region, environment);
-
-        ensureArtifactExists(name, version);
 
         final UndeployRequest request = new UndeployRequest();
         init(name, version, environment, region, request);

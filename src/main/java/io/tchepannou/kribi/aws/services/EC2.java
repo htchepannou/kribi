@@ -356,8 +356,12 @@ public class EC2 {
         }
 
         final File dir = new File(url.getFile());
-        for (final File f : dir.listFiles()) {
-            scp(f, shell, host);
+        final File[] files = dir.listFiles();
+        LOGGER.info("Copying scripts from {} file(s) from {}", files != null ? files.length : 0, dir);
+        if (files != null) {
+            for (final File f : files) {
+                scp(f, shell, host);
+            }
         }
     }
 
