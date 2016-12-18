@@ -87,7 +87,7 @@ public class EC2 {
         final List<String> versions = new ArrayList<>();
         for (final Reservation reservation : ec2.describeInstances().getReservations()) {
             final com.amazonaws.services.ec2.model.Instance instance = reservation.getInstances().get(0);
-            if (hasTag(TAG_NAME, name, instance) && hasTag(TAG_ENVIRONMENT, env.name(), instance)) {
+            if (hasTag(TAG_APP_NAME, name, instance) && hasTag(TAG_ENVIRONMENT, env.name(), instance)) {
                 final Optional<Tag> version = getTag(TAG_VERSION, instance);
                 if (version.isPresent()) {
                     versions.add(version.get().getValue());
