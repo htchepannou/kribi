@@ -43,10 +43,11 @@ chown -R $SERVICE_USER:$SERVICE_USER /opt/$SERVICE_NAME
 #------------------------------
 echo "RUNNING APP..."
 
+LOG_FILE=/opt/$SERVICE_NAME/log/$SERVICE_NAME.log
+
 JAVA_OPTS="$JVM_OPTS \
  --spring.profiles.active=$SERVICE_ENVIRONMENT \
  --logging.file=$LOG_FILE \
- --spring.pidfile=$PID_PATH_NAME \
  --application.version=$SERVICE_VERSION \
  -XX:+PrintGCDateStamps \
  -verbose:gc \
@@ -64,5 +65,4 @@ su -m $SERVICE_USER -c "java -jar $SERVICE_NAME.jar $JAVA_OPTS > log/console.log
 #------------------------------
 # TERMINATE
 #------------------------------
-aws ec2 terminate-instances --dry-run --instance-ids $AWS_INSTANCE_ID
 shutdown -h now
