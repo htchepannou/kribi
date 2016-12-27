@@ -50,6 +50,7 @@ public class EC2 {
     private static final String TAG_ENVIRONMENT = "Environment";
     private static final String TAG_VERSION = "Version";
     private static final String TAG_TRANSACTION_ID = "TransactionId";
+    private static final String TAG_TEMPLATE = "Template";
 
     private final AmazonEC2 ec2;
     private final AmazonIdentityManagement iam;
@@ -295,6 +296,7 @@ public class EC2 {
         addTag(TAG_VERSION, deployRequest.getVersion(), tags);
         addTag(TAG_ENVIRONMENT, env.name(), tags);
         addTag(TAG_TRANSACTION_ID, deployRequest.getTransactionId(), tags);
+        addTag(TAG_TEMPLATE, app.getTemplate().name(), tags);
 
         final CreateTagsRequest request = new CreateTagsRequest();
         request.withResources(instanceIds)

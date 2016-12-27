@@ -61,8 +61,3 @@ JAVA_OPTS="$JVM_OPTS \
 
 cd /opt/$SERVICE_NAME
 su -m $SERVICE_USER -c "java -jar $SERVICE_NAME.jar $JAVA_OPTS > log/console.log 2>&1  &"
-
-#------------------------------
-# TERMINATE
-#------------------------------
-shutdown -h now
