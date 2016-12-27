@@ -11,10 +11,16 @@ import io.tchepannou.kribi.client.UndeployResponse;
 import io.tchepannou.kribi.model.Cluster;
 import io.tchepannou.kribi.model.Environment;
 import io.tchepannou.kribi.model.Host;
+import io.tchepannou.kribi.model.aws.ApplicationTemplate;
 import io.tchepannou.kribi.services.Deployer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Deploy and run a JavaApplication on a EC2
@@ -26,11 +32,14 @@ import java.util.Collections;
  * <li>Destroy the application after the application is terminated</li>
  * </ul>
  */
-public class JavaAppDeployer implements Deployer{
+public class JavaAppDeployer implements Deployer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(JavaAppDeployer.class);
+
     private final EC2 ec2;
 
     public JavaAppDeployer(final AwsContext context) {
         this.ec2 = new EC2(context);
+        scheduleVaccum();
     }
 
     @Override
@@ -54,11 +63,26 @@ public class JavaAppDeployer implements Deployer{
     }
 
     @Override
-    public Collection<String> getVersions(final String name, final Environment env){
+    public Collection<String> getVersions(final String name, final Environment env) {
         return ec2.getVersions(name, env);
     }
 
-    private Cluster deployCluster (final DeployRequest request){
+    private void vacuum() {
+        final Collection<Reservation> reservations = ec2.getReservationsByTemplate(ApplicationTemplate.javaapp);
+        final long now = System.currentTimeMillis();
+        final long oneHour = 3600 * 1000;
+        for (final Reservation reservation : reservations) {
+            if (reservation.getInstances().get(0).getLaunchTime().getTime() - now > oneHour) {
+                try {
+                    ec2.delete(reservation);
+                } catch (final Exception e) {
+                    LOGGER.error("Unable to delete Reservation: {}", reservation.getReservationId(), e);
+                }
+            }
+        }
+    }
+
+    private Cluster deployCluster(final DeployRequest request) {
         final Reservation reservation = ec2.create(request);
         final Host host = toHost(reservation.getInstances().get(0));
 
@@ -74,5 +98,22 @@ public class JavaAppDeployer implements Deployer{
         host.setPrivateIp(instance.getPrivateIpAddress());
         host.setPublicIp(instance.getPublicIpAddress());
         return host;
+    }
+
+    private void scheduleVaccum() {
+        final Runnable task = new Runnable() {
+            @Override
+            public void run() {
+                LOGGER.info("Running vaccum...");
+                try {
+                    vacuum();
+                } catch (final Exception e) {
+                    LOGGER.error("Unexpected error", e);
+                }
+            }
+        };
+
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleWithFixedDelay(task, 0, 1, TimeUnit.HOURS);
     }
 }

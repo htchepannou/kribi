@@ -104,6 +104,32 @@ public class EC2 {
         return versions;
     }
 
+    public Collection<Reservation> getReservationsByTemplate(ApplicationTemplate template) {
+        final List<Reservation> reservations = new ArrayList<>();
+        for (final Reservation reservation : ec2.describeInstances().getReservations()) {
+            for (final com.amazonaws.services.ec2.model.Instance instance : reservation.getInstances()) {
+                if (isTerminated(instance)) {
+                    continue;
+                }
+
+                if (hasTag(TAG_TEMPLATE, template.name(), instance)) {
+                    reservations.add(reservation);
+                }
+                break;
+            }
+        }
+        return reservations;
+    }
+
+    public void delete(final Reservation reservation){
+        final List<String> instanceIds = getInstanceIds(reservation);
+
+        LOGGER.info("Terminating {} instance(s) {}", instanceIds.size(), instanceIds);
+        final TerminateInstancesRequest request = new TerminateInstancesRequest()
+                .withInstanceIds(instanceIds);
+        ec2.terminateInstances(request);
+    }
+
     //-- Private
     private void ensureNotAlreadyDeployed(final DeployRequest deployRequest) {
         final Optional<Reservation> prev = findReservation(deployRequest);
@@ -175,12 +201,7 @@ public class EC2 {
             return;
         }
 
-        final List<String> instanceIds = getInstanceIds(reservation.get());
-
-        LOGGER.info("Terminating {} instance(s) {}", instanceIds.size(), instanceIds);
-        final TerminateInstancesRequest request = new TerminateInstancesRequest()
-                .withInstanceIds(instanceIds);
-        ec2.terminateInstances(request);
+        delete(reservation.get());
     }
 
     private List<String> getSecurityGroups(final Application app) {
