@@ -15,7 +15,6 @@ import io.tchepannou.kribi.model.aws.ApplicationTemplate;
 import io.tchepannou.kribi.services.Deployer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -67,7 +66,6 @@ public class JavaAppDeployer implements Deployer {
         return ec2.getVersions(name, env);
     }
 
-    @Scheduled(cron = "0 0/30 * * * ?")
     public void vacuum() {
         LOGGER.info("Running the vacuum in {}", context.getRegion());
 

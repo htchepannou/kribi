@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.Scheduled;
 
 @Configuration
 public class AwsConfiguration {
@@ -45,13 +46,14 @@ public class AwsConfiguration {
     }
 
     //-- Cron
+    @Scheduled(cron = "0 0/30 * * * ?")
     public void vaccum(){
         for (Regions region : Regions.values()){
             try {
-                AwsContext ctx = new AwsContext(awsCredentialsProvider(), region.name());
+                AwsContext ctx = new AwsContext(awsCredentialsProvider(), region.getName());
                 new JavaAppDeployer(ctx).vacuum();
             } catch (Exception e){
-                LOGGER.error("Unexcepted error when running the vaccum on {}", region, e);
+                LOGGER.error("Unexcepted error when running the vaccum on {}", region.getName(), e);
             }
         }
     }
