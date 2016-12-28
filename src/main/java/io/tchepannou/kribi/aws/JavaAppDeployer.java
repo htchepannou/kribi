@@ -69,10 +69,18 @@ public class JavaAppDeployer implements Deployer {
 
     private void vacuum() {
         final Collection<Reservation> reservations = ec2.getReservationsByTemplate(ApplicationTemplate.javaapp);
+        LOGGER.info("{} reservation found", reservations.size());
+
         final long now = System.currentTimeMillis();
         final long oneHour = 3600 * 1000;
         for (final Reservation reservation : reservations) {
-            if (reservation.getInstances().get(0).getLaunchTime().getTime() - now > oneHour) {
+            long diffMillis = now - reservation.getInstances().get(0).getLaunchTime().getTime();
+            LOGGER.info("Reservation {} launched {} minute(s) ago",
+                    reservation.getRequesterId(),
+                    TimeUnit.MINUTES.convert(diffMillis, TimeUnit.MILLISECONDS)
+            );
+
+            if (diffMillis > oneHour) {
                 try {
                     ec2.delete(reservation);
                 } catch (final Exception e) {

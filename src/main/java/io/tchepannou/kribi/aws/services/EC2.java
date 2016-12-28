@@ -124,7 +124,7 @@ public class EC2 {
     public void delete(final Reservation reservation){
         final List<String> instanceIds = getInstanceIds(reservation);
 
-        LOGGER.info("Terminating {} instance(s) {}", instanceIds.size(), instanceIds);
+        LOGGER.info("Terminating {} instance(s) {} from reservation {}", instanceIds.size(), instanceIds, reservation.getRequesterId());
         final TerminateInstancesRequest request = new TerminateInstancesRequest()
                 .withInstanceIds(instanceIds);
         ec2.terminateInstances(request);
