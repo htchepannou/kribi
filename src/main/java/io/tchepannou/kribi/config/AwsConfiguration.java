@@ -3,9 +3,14 @@ package io.tchepannou.kribi.config;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.auth.PropertiesFileCredentialsProvider;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.transfer.TransferManager;
+import io.tchepannou.kribi.aws.AwsContext;
+import io.tchepannou.kribi.aws.JavaAppDeployer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +18,7 @@ import org.springframework.core.env.Environment;
 
 @Configuration
 public class AwsConfiguration {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsConfiguration.class);
     @Autowired
     Environment env;
 
@@ -36,5 +42,17 @@ public class AwsConfiguration {
     @Bean(destroyMethod = "shutdownNow")
     TransferManager transferManager() {
         return new TransferManager(awsCredentialsProvider());
+    }
+
+    //-- Cron
+    public void vaccum(){
+        for (Regions region : Regions.values()){
+            try {
+                AwsContext ctx = new AwsContext(awsCredentialsProvider(), region.name());
+                new JavaAppDeployer(ctx).vacuum();
+            } catch (Exception e){
+                LOGGER.error("Unexcepted error when running the vaccum on {}", region, e);
+            }
+        }
     }
 }

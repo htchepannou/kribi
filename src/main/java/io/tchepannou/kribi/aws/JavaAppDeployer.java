@@ -15,11 +15,10 @@ import io.tchepannou.kribi.model.aws.ApplicationTemplate;
 import io.tchepannou.kribi.services.Deployer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -36,10 +35,11 @@ public class JavaAppDeployer implements Deployer {
     private static final Logger LOGGER = LoggerFactory.getLogger(JavaAppDeployer.class);
 
     private final EC2 ec2;
+    private final AwsContext context;
 
     public JavaAppDeployer(final AwsContext context) {
+        this.context = context;
         this.ec2 = new EC2(context);
-        scheduleVaccum();
     }
 
     @Override
@@ -67,14 +67,17 @@ public class JavaAppDeployer implements Deployer {
         return ec2.getVersions(name, env);
     }
 
-    private void vacuum() {
+    @Scheduled(cron = "0 0/30 * * * ?")
+    public void vacuum() {
+        LOGGER.info("Running the vacuum in {}", context.getRegion());
+
         final Collection<Reservation> reservations = ec2.getReservationsByTemplate(ApplicationTemplate.javaapp);
         LOGGER.info("{} reservation found", reservations.size());
 
         final long now = System.currentTimeMillis();
         final long oneHour = 3600 * 1000;
         for (final Reservation reservation : reservations) {
-            long diffMillis = now - reservation.getInstances().get(0).getLaunchTime().getTime();
+            final long diffMillis = now - reservation.getInstances().get(0).getLaunchTime().getTime();
             LOGGER.info("Reservation {} launched {} minute(s) ago",
                     reservation.getRequesterId(),
                     TimeUnit.MINUTES.convert(diffMillis, TimeUnit.MILLISECONDS)
@@ -106,22 +109,5 @@ public class JavaAppDeployer implements Deployer {
         host.setPrivateIp(instance.getPrivateIpAddress());
         host.setPublicIp(instance.getPublicIpAddress());
         return host;
-    }
-
-    private void scheduleVaccum() {
-        final Runnable task = new Runnable() {
-            @Override
-            public void run() {
-                LOGGER.info("Running vaccum...");
-                try {
-                    vacuum();
-                } catch (final Exception e) {
-                    LOGGER.error("Unexpected error", e);
-                }
-            }
-        };
-
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleWithFixedDelay(task, 0, 1, TimeUnit.HOURS);
     }
 }

@@ -20,6 +20,7 @@ import io.tchepannou.kribi.model.aws.AwsSecurityGroups;
 import io.tchepannou.kribi.services.Deployer;
 
 public class AwsContext {
+    private String region;
     private String hostedZoneId;
     private AwsSecurityGroups securityGroups = new AwsSecurityGroups();
     private AwsLoadBalancer loadBalancer = new AwsLoadBalancer();
@@ -30,6 +31,8 @@ public class AwsContext {
     private final AmazonIdentityManagement iam;
 
     public AwsContext(final AWSCredentialsProvider credentialsProvider, final String region) {
+        this.region = region;
+
         elb = AmazonElasticLoadBalancingClientBuilder.standard()
                 .withCredentials(credentialsProvider)
                 .withRegion(region)
@@ -117,5 +120,9 @@ public class AwsContext {
 
     public AmazonRoute53 getRoute53() {
         return route53;
+    }
+
+    public String getRegion() {
+        return region;
     }
 }
