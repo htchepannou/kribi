@@ -60,4 +60,6 @@ JAVA_OPTS="$JVM_OPTS \
  -XX:HeapDumpPath=$SERVICE_DIR/log/heap-`date +%s`.hprof"
 
 cd /opt/$SERVICE_NAME
-su -m $SERVICE_USER -c "java -jar $SERVICE_NAME.jar $JAVA_OPTS > log/console.log 2>&1  &"
+su -m $SERVICE_USER -c "java -jar $SERVICE_NAME.jar $JAVA_OPTS > log/console.log"
+
+shutdown -h now
