@@ -43,11 +43,13 @@ public class CloudFormationDeployer implements Deployer {
     private final EC2 ec2;
     private final ELB elb;
     private final Route53 route53;
+    private final AwsContext context;
 
     public CloudFormationDeployer(final AwsContext context) {
         this.ec2 = new EC2(context);
         this.elb = new ELB(context);
         this.route53 = new Route53(context);
+        this.context = context;
     }
 
     public DeployResponse deploy(final DeployRequest deployRequest) {
@@ -143,4 +145,10 @@ public class CloudFormationDeployer implements Deployer {
         }
     }
 
+
+    public void vacuum() {
+        LOGGER.info("Running the vacuum in {}", context.getRegion());
+
+        ec2.vaccum();
+    }
 }

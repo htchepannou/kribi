@@ -8,6 +8,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import io.tchepannou.kribi.aws.AwsContext;
+import io.tchepannou.kribi.aws.CloudFormationDeployer;
 import io.tchepannou.kribi.aws.JavaAppDeployer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,14 +47,26 @@ public class AwsConfiguration {
     }
 
     //-- Cron
-    @Scheduled(cron = "0 0/30 * * * ?")
-    public void vaccum(){
+    @Scheduled(cron = "0 0/15 * * * ?")
+    public void vaccumJavaApp(){
         for (Regions region : Regions.values()){
             try {
                 AwsContext ctx = new AwsContext(awsCredentialsProvider(), region.getName());
                 new JavaAppDeployer(ctx).vacuum();
             } catch (Exception e){
-                LOGGER.error("Unexcepted error when running the vaccum on {}", region.getName(), e);
+                LOGGER.error("JavaApp: Unexcepted error when running the vaccum on {}", region.getName(), e);
+            }
+        }
+    }
+
+    @Scheduled(cron = "0 0/15 * * * ?")
+    public void vaccumCloudFormation(){
+        for (Regions region : Regions.values()){
+            try {
+                AwsContext ctx = new AwsContext(awsCredentialsProvider(), region.getName());
+                new CloudFormationDeployer(ctx).vacuum();
+            } catch (Exception e){
+                LOGGER.error("CloudFormation: Unexcepted error when running the vaccum on {}", region.getName(), e);
             }
         }
     }

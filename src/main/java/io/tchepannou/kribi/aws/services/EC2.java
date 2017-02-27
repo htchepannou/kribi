@@ -104,7 +104,11 @@ public class EC2 {
         return versions;
     }
 
-    public Collection<Reservation> getReservationsByTemplate(ApplicationTemplate template) {
+    public Collection<Reservation> getReservations() {
+        return ec2.describeInstances().getReservations();
+    }
+
+    public Collection<Reservation> getReservationsByTemplate(final ApplicationTemplate template) {
         final List<Reservation> reservations = new ArrayList<>();
         for (final Reservation reservation : ec2.describeInstances().getReservations()) {
             for (final com.amazonaws.services.ec2.model.Instance instance : reservation.getInstances()) {
@@ -121,13 +125,50 @@ public class EC2 {
         return reservations;
     }
 
-    public void delete(final Reservation reservation){
+    public void delete(final Reservation reservation) {
         final List<String> instanceIds = getInstanceIds(reservation);
 
         LOGGER.info("Terminating {} instance(s) {} from reservation {}", instanceIds.size(), instanceIds, reservation.getReservationId());
         final TerminateInstancesRequest request = new TerminateInstancesRequest()
                 .withInstanceIds(instanceIds);
         ec2.terminateInstances(request);
+    }
+
+    public void vaccum() {
+        final Collection<Reservation> reservations = getReservations();
+        LOGGER.info("{} reservation found", reservations.size());
+
+        final long now = System.currentTimeMillis();
+        final long fiveMinutes = 5 * 60 * 1000;
+        for (final Reservation reservation : reservations) {
+            for (final com.amazonaws.services.ec2.model.Instance instance : reservation.getInstances()) {
+                final Optional<Tag> tag = getTag(TAG_TEMPLATE, instance);
+
+                if (isValidTemplate(tag)) {
+                    final long diffMillis = now - reservation.getInstances().get(0).getLaunchTime().getTime();
+                    if (diffMillis > fiveMinutes) {
+                        LOGGER.error("{} is a phantom reservation", reservation.getReservationId());
+                        try {
+                            delete(reservation);
+                            break;
+                        } catch (final Exception e) {
+                            LOGGER.error("Unable to delete Reservation: {}", reservation.getReservationId(), e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean isValidTemplate(Optional<Tag> tag){
+        if (tag.isPresent()){
+            try {
+                return ApplicationTemplate.valueOf(tag.get().getValue().toLowerCase()) == null;
+            } catch (Exception e){
+                return false;
+            }
+        }
+        return false;
     }
 
     //-- Private
